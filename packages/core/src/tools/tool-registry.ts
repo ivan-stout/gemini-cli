@@ -21,6 +21,7 @@ import { parse } from 'shell-quote';
 import { ToolErrorType } from './tool-error.js';
 import { safeJsonStringify } from '../utils/safeJsonStringify.js';
 import type { EventEmitter } from 'node:events';
+import { NotebookEditTool } from './notebook-edit.js';
 
 type ToolParams = Record<string, unknown>;
 
@@ -166,6 +167,8 @@ Signal: Signal number or \`(none)\` if no signal was received.
   }
 }
 
+const BUILTIN_TOOLS = [NotebookEditTool];
+
 export class ToolRegistry {
   // The tools keyed by tool name as seen by the LLM.
   private tools: Map<string, AnyDeclarativeTool> = new Map();
@@ -183,25 +186,31 @@ export class ToolRegistry {
       this.config.getWorkspaceContext(),
       eventEmitter,
     );
+    for (const tool of BUILTIN_TOOLS) {
+      this.registerTool(new tool(this.config));
+    }
+  }
+
+  registerTool(tool: AnyDeclarativeTool) {
+    this.tools.set(tool.name, tool);
+  }
+
+  clear() {
+    this.tools.clear();
+  }
+
+  removeDiscoveredTools() {
+    for (const [name, tool] of this.tools.entries()) {
+      if (tool.isDiscovered) {
+        this.tools.delete(name);
+      }
+    }
   }
 
   /**
-   * Registers a tool definition.
-   * @param tool - The tool object containing schema and execution logic.
-   */
-  registerTool(tool: AnyDeclarativeTool): void {
-    if (this.tools.has(tool.name)) {
-      if (tool instanceof DiscoveredMCPTool) {
-        tool = tool.asFullyQualifiedTool();
-      } else {
-        // Decide on behavior: throw error, log warning, or allow overwrite
-        console.warn(
-          `Tool with name "${tool.name}" is already registered. Overwriting.`,
-        );
-      }
-    }
-    this.tools.set(tool.name, tool);
-  }
+   * Retrieves a tool by its name.
+   *
+
 
   private removeDiscoveredTools(): void {
     for (const tool of this.tools.values()) {

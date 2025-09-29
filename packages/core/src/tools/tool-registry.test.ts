@@ -120,6 +120,7 @@ describe('ToolRegistry', () => {
     } as fs.Stats);
     config = new Config(baseConfigParams);
     toolRegistry = new ToolRegistry(config);
+    toolRegistry.clear(); // Clear any built-in tools
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.spyOn(console, 'debug').mockImplementation(() => {});

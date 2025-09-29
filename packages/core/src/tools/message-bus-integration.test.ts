@@ -86,6 +86,7 @@ class TestTool extends BaseDeclarativeTool<TestParams, TestResult> {
       },
       true,
       false,
+      false,
       messageBus,
     );
   }

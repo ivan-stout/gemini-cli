@@ -261,6 +261,7 @@ export abstract class DeclarativeTool<
     readonly parameterSchema: unknown,
     readonly isOutputMarkdown: boolean = true,
     readonly canUpdateOutput: boolean = false,
+    readonly isDiscovered: boolean = false,
     readonly messageBus?: MessageBus,
   ) {}
 
