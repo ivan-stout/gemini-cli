@@ -52,6 +52,7 @@ export class SubagentToolWrapper extends BaseDeclarativeTool<
       parameterSchema,
       /* isOutputMarkdown */ true,
       /* canUpdateOutput */ true,
+      /* isDiscovered */ false,
       messageBus,
     );
   }

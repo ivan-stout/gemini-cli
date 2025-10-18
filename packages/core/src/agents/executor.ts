@@ -26,6 +26,7 @@ import { LSTool } from '../tools/ls.js';
 import { MemoryTool } from '../tools/memoryTool.js';
 import { ReadFileTool } from '../tools/read-file.js';
 import { ReadManyFilesTool } from '../tools/read-many-files.js';
+import { NotebookEditTool } from '../tools/notebook-edit.js';
 import { GLOB_TOOL_NAME, WEB_SEARCH_TOOL_NAME } from '../tools/tool-names.js';
 import { promptIdContext } from '../utils/promptIdContext.js';
 import { logAgentStart, logAgentFinish } from '../telemetry/loggers.js';
@@ -716,6 +717,7 @@ Important Rules:
       ReadManyFilesTool.Name,
       MemoryTool.Name,
       WEB_SEARCH_TOOL_NAME,
+      NotebookEditTool.Name,
     ]);
     for (const tool of toolRegistry.getAllTools()) {
       if (!allowlist.has(tool.name)) {

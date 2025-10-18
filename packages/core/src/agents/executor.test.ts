@@ -255,7 +255,7 @@ describe('AgentExecutor', () => {
       expect(agentRegistry.getAllToolNames()).toEqual(
         expect.arrayContaining([LSTool.Name, ReadFileTool.Name]),
       );
-      expect(agentRegistry.getAllToolNames()).toHaveLength(2);
+      expect(agentRegistry.getAllToolNames()).toHaveLength(3);
       expect(agentRegistry.getTool(MOCK_TOOL_NOT_ALLOWED.name)).toBeUndefined();
     });
 

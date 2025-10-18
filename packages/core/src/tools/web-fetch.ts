@@ -419,6 +419,7 @@ export class WebFetchTool extends BaseDeclarativeTool<
       },
       true, // isOutputMarkdown
       false, // canUpdateOutput
+      false, // isDiscovered
       messageBus,
     );
     const proxy = config.getProxy();
