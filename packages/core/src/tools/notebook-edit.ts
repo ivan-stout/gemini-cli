@@ -386,7 +386,7 @@ class NotebookEditToolInvocation extends BaseToolInvocation<
     }
 
     const sourceNode = findNodeAtLocation(targetCellNode, ['source']);
-    if (!sourceNode) {
+    if (!sourceNode || sourceNode.type !== 'array' || !sourceNode.children) {
       return {
         llmContent: 'Invalid cell structure: "source" not found',
         returnDisplay: 'Invalid cell structure: "source" not found',
@@ -397,18 +397,57 @@ class NotebookEditToolInvocation extends BaseToolInvocation<
       };
     }
 
-    const newSource = content
-      ? content.split('\n').map((line) => line + '\n')
-      : [''];
-    const newSourceText = JSON.stringify(newSource, null, 2);
+    const oldSource = sourceNode.children.map((node) =>
+      JSON.parse(
+        originalContent.substring(node.offset, node.offset + node.length),
+      ),
+    );
+    const newSource = content ? content.split('\n') : [''];
 
-    const edits = [
-      {
-        offset: sourceNode.offset,
-        length: sourceNode.length,
-        content: newSourceText,
-      },
-    ];
+    const edits = [];
+    const minLength = Math.min(oldSource.length, newSource.length);
+
+    for (let i = 0; i < minLength; i++) {
+      if (
+        oldSource[i] !==
+        newSource[i] + (i < newSource.length - 1 ? '\n' : '')
+      ) {
+        const sourceLineNode = sourceNode.children[i];
+        edits.push({
+          offset: sourceLineNode.offset,
+          length: sourceLineNode.length,
+          content: JSON.stringify(
+            newSource[i] + (i < newSource.length - 1 ? '\n' : ''),
+          ),
+        });
+      }
+    }
+
+    if (newSource.length > oldSource.length) {
+      const lastLineNode = sourceNode.children[sourceNode.children.length - 1];
+      const insertOffset = lastLineNode.offset + lastLineNode.length;
+      const linesToAdd = newSource
+        .slice(oldSource.length)
+        .map((line, i, arr) =>
+          JSON.stringify(line + (i < arr.length - 1 ? '\n' : '')),
+        )
+        .join(',\n');
+      edits.push({
+        offset: insertOffset,
+        length: 0,
+        content: ',\n' + linesToAdd,
+      });
+    } else if (oldSource.length > newSource.length) {
+      const startNode = sourceNode.children[newSource.length];
+      const endNode = sourceNode.children[oldSource.length - 1];
+      const deleteOffset = startNode.offset;
+      const deleteLength = endNode.offset + endNode.length - deleteOffset;
+      edits.push({
+        offset: deleteOffset,
+        length: deleteLength,
+        content: '',
+      });
+    }
 
     const updatedContent = applyEdits(originalContent, edits);
 
