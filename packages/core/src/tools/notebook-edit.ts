@@ -4,19 +4,38 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { promises as fs } from 'node:fs';
-import * as path from 'node:path';
-import { randomBytes } from 'node:crypto';
-import type { ToolInvocation, ToolLocation, ToolResult } from './tools.js';
-import { BaseDeclarativeTool, BaseToolInvocation, Kind } from './tools.js';
+import {
+  BaseDeclarativeTool,
+  BaseToolInvocation,
+  Kind,
+  ToolConfirmationOutcome,
+} from './tools.js';
 import { isNodeError, getErrorMessage } from '../utils/errors.js';
 import { ToolErrorType } from './tool-error.js';
 import type { Config } from '../config/config.js';
+import { ApprovalMode } from '../config/config.js';
 import { FileOperation } from '../telemetry/metrics.js';
 import { logFileOperation } from '../telemetry/loggers.js';
 import { FileOperationEvent } from '../telemetry/types.js';
 import type { Node } from 'jsonc-parser';
 import { applyEdits, findNodeAtLocation, parseTree } from 'jsonc-parser';
+import type {
+  ModifiableDeclarativeTool,
+  ModifyContext,
+} from './modifiable-tool.js';
+import * as Diff from 'diff';
+import { DEFAULT_DIFF_OPTIONS } from './diffOptions.js';
+import { makeRelative, shortenPath } from '../utils/paths.js';
+import { promises as fs } from 'node:fs';
+import * as path from 'node:path';
+import { randomBytes } from 'node:crypto';
+import type {
+  ToolCallConfirmationDetails,
+  ToolEditConfirmationDetails,
+  ToolInvocation,
+  ToolLocation,
+  ToolResult,
+} from './tools.js';
 
 interface NotebookCell {
   id?: string;
@@ -54,6 +73,10 @@ export interface NotebookEditToolParams {
   source_index?: number;
   /** Destination index for move operation */
   destination_index?: number;
+  /**
+   * Whether the edit was modified manually by the user.
+   */
+  modified_by_user?: boolean;
 }
 
 class NotebookEditToolInvocation extends BaseToolInvocation<
@@ -74,6 +97,64 @@ class NotebookEditToolInvocation extends BaseToolInvocation<
 
   override toolLocations(): ToolLocation[] {
     return [{ path: this.params.absolute_path }];
+  }
+
+  override async shouldConfirmExecute(
+    _abortSignal: AbortSignal,
+  ): Promise<ToolCallConfirmationDetails | false> {
+    if (this.config.getApprovalMode() === ApprovalMode.AUTO_EDIT) {
+      return false;
+    }
+
+    let currentContent: string;
+    try {
+      currentContent = await fs.readFile(this.params.absolute_path, 'utf-8');
+    } catch (error) {
+      if (isNodeError(error) && error.code === 'ENOENT') {
+        currentContent = '';
+      } else {
+        throw error;
+      }
+    }
+
+    const root = parseTree(currentContent);
+    if (!root && currentContent !== '') {
+      console.log('Error: Invalid JSON in notebook file');
+      return false;
+    }
+
+    const result = this.performOperation(currentContent, root!, this.params);
+    if (result.error) {
+      console.log(`Error: ${result.returnDisplay}`);
+      return false;
+    }
+
+    const newContent = result.llmContent as string;
+    const fileName = path.basename(this.params.absolute_path);
+    const fileDiff = Diff.createPatch(
+      fileName,
+      currentContent,
+      newContent,
+      'Current',
+      'Proposed',
+      DEFAULT_DIFF_OPTIONS,
+    );
+
+    const confirmationDetails: ToolEditConfirmationDetails = {
+      type: 'edit',
+      title: `Confirm Edit: ${shortenPath(makeRelative(this.params.absolute_path, this.config.getTargetDir()))}`,
+      fileName,
+      filePath: this.params.absolute_path,
+      fileDiff,
+      originalContent: currentContent,
+      newContent,
+      onConfirm: async (outcome: ToolConfirmationOutcome) => {
+        if (outcome === ToolConfirmationOutcome.ProceedAlways) {
+          this.config.setApprovalMode(ApprovalMode.AUTO_EDIT);
+        }
+      },
+    };
+    return confirmationDetails;
   }
 
   async execute(): Promise<ToolResult> {
@@ -175,7 +256,7 @@ class NotebookEditToolInvocation extends BaseToolInvocation<
     }
   }
 
-  private performOperation(
+  performOperation(
     originalContent: string,
     root: Node,
     params: NotebookEditToolParams,
@@ -760,10 +841,10 @@ class NotebookEditToolInvocation extends BaseToolInvocation<
   }
 }
 
-export class NotebookEditTool extends BaseDeclarativeTool<
-  NotebookEditToolParams,
-  ToolResult
-> {
+export class NotebookEditTool
+  extends BaseDeclarativeTool<NotebookEditToolParams, ToolResult>
+  implements ModifiableDeclarativeTool<NotebookEditToolParams>
+{
   static readonly Name = 'notebook_edit';
 
   constructor(private config: Config) {
@@ -831,5 +912,55 @@ export class NotebookEditTool extends BaseDeclarativeTool<
     params: NotebookEditToolParams,
   ): ToolInvocation<NotebookEditToolParams, ToolResult> {
     return new NotebookEditToolInvocation(this.config, params);
+  }
+
+  getModifyContext(_: AbortSignal): ModifyContext<NotebookEditToolParams> {
+    return {
+      getFilePath: (params: NotebookEditToolParams) => params.absolute_path,
+      getCurrentContent: async (
+        params: NotebookEditToolParams,
+      ): Promise<string> => {
+        try {
+          return await fs.readFile(params.absolute_path, 'utf-8');
+        } catch (err) {
+          if (!isNodeError(err) || err.code !== 'ENOENT') throw err;
+          return '';
+        }
+      },
+      getProposedContent: async (
+        params: NotebookEditToolParams,
+      ): Promise<string> => {
+        try {
+          const currentContent = await fs.readFile(
+            params.absolute_path,
+            'utf-8',
+          );
+          const root = parseTree(currentContent);
+          if (!root) {
+            return '';
+          }
+          const invocation = new NotebookEditToolInvocation(
+            this.config,
+            params,
+          );
+          const result = (
+            invocation as NotebookEditToolInvocation
+          ).performOperation(currentContent, root, params);
+          return result.llmContent as string;
+        } catch (err) {
+          if (!isNodeError(err) || err.code !== 'ENOENT') throw err;
+          return '';
+        }
+      },
+      createUpdatedParams: (
+        _oldContent: string,
+        modifiedProposedContent: string,
+        originalParams: NotebookEditToolParams,
+      ): NotebookEditToolParams => ({
+        ...originalParams,
+        cell_content: modifiedProposedContent,
+        modified_by_user: true,
+      }),
+    };
   }
 }
