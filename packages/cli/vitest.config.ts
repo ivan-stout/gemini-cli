@@ -27,6 +27,7 @@ export default defineConfig({
     },
     alias: {
       react: path.resolve(__dirname, '../../node_modules/react'),
+      '@google/gemini-cli-core': path.resolve(__dirname, '../core/src'),
     },
     setupFiles: ['./test-setup.ts'],
     coverage: {

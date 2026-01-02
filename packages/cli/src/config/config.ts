@@ -10,6 +10,7 @@ import process from 'node:process';
 import { mcpCommand } from '../commands/mcp.js';
 import { extensionsCommand } from '../commands/extensions.js';
 import { hooksCommand } from '../commands/hooks.js';
+import { notebookCommand } from '../commands/notebook/index.js';
 import {
   Config,
   setGeminiMdFilename as setServerGeminiMdFilename,
@@ -249,6 +250,8 @@ export async function parseArguments(settings: Settings): Promise<CliArgs> {
     )
     // Register MCP subcommands
     .command(mcpCommand)
+    // Register Notebook subcommands
+    .command(notebookCommand)
     // Ensure validation flows through .fail() for clean UX
     .fail((msg, err) => {
       if (err) throw err;
