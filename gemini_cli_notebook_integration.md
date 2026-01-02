@@ -108,6 +108,17 @@ Integration **Branch:** `notebook-wrapper-integration` **Goal:** Implement
 
   - [x] **Testing:** Add unit tests for interactive commands.
 
+## Phase 7: Tool Support (New)
+
+- [x] **Notebook Edit Tool (`notebook_edit.ts`)**
+  - [x] Implement `notebook_edit` core tool for LLM usage.
+
+  - [x] Allows Gemini to suggest notebook edits automatically.
+
+  - [x] **Registration:** Register in `config.ts` and export from `index.ts`.
+
+  - [x] **Testing:** Add unit tests for the tool logic.
+
 ## Notes & Constraints
 
 - **Zero Python Dependencies:** Logic must be pure TypeScript.
