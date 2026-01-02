@@ -95,6 +95,19 @@ Integration **Branch:** `notebook-wrapper-integration` **Goal:** Implement
 
   - [x] **Registration:** Add `edit` to `index.ts`.
 
+## Phase 6: Interactive Commands (New)
+
+- [x] **Slash Command (`notebookCommand.ts`)**
+  - [x] Implement `SlashCommand` interface for `/notebook`.
+
+  - [x] Support `/notebook export [filename]`.
+
+  - [x] Support `/notebook edit <filename> <instruction>`.
+
+  - [x] **Registration:** Add to `BuiltinCommandLoader.ts`.
+
+  - [x] **Testing:** Add unit tests for interactive commands.
+
 ## Notes & Constraints
 
 - **Zero Python Dependencies:** Logic must be pure TypeScript.
