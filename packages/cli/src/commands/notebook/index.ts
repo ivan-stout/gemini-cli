@@ -6,6 +6,7 @@
 
 import type { CommandModule, Argv } from 'yargs';
 import { exportCommand } from './export.js';
+import { editCommand } from './edit.js';
 import { initializeOutputListenersAndFlush } from '../../gemini.js';
 
 export const notebookCommand: CommandModule = {
@@ -15,6 +16,7 @@ export const notebookCommand: CommandModule = {
     yargs
       .middleware(() => initializeOutputListenersAndFlush())
       .command(exportCommand)
+      .command(editCommand)
       .demandCommand(1, 'You need at least one command before continuing.')
       .version(false),
   handler: () => {

@@ -10,20 +10,13 @@ vi.mock('../../gemini.js', () => ({
   initializeOutputListenersAndFlush: vi.fn(),
 }));
 
-vi.mock('@google/gemini-cli-core', () => ({
-  writeToStderr: vi.fn(),
-  writeToStdout: vi.fn(),
-  sessionId: 'test-session',
+// Mock subcommands to avoid loading their dependencies
+vi.mock('./export.js', () => ({
+  exportCommand: { command: 'export' },
 }));
 
-// Mock config and settings to avoid deep imports into broken core parts
-vi.mock('../../config/config.js', () => ({
-  loadCliConfig: vi.fn(),
-  isDebugMode: vi.fn(),
-}));
-
-vi.mock('../../config/settings.js', () => ({
-  loadSettings: vi.fn(() => ({ merged: {} })),
+vi.mock('./edit.js', () => ({
+  editCommand: { command: 'edit <file>' },
 }));
 
 import { notebookCommand } from './index.js';
@@ -36,7 +29,7 @@ describe('notebook command', () => {
     expect(typeof notebookCommand.builder).toBe('function');
   });
 
-  it('should register export subcommand', () => {
+  it('should register export and edit subcommands', () => {
     const mockYargs = {
       command: vi.fn().mockReturnThis(),
       demandCommand: vi.fn().mockReturnThis(),
@@ -52,5 +45,6 @@ describe('notebook command', () => {
     const commandCalls = mockYargs.command.mock.calls;
     const commandNames = commandCalls.map((call) => call[0].command);
     expect(commandNames).toContain('export');
+    expect(commandNames).toContain('edit <file>');
   });
 });

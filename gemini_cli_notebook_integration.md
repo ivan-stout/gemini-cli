@@ -73,8 +73,32 @@ Integration **Branch:** `notebook-wrapper-integration` **Goal:** Implement
   - [x] Open generated `.ipynb` in JupyterLab (if available).
   - [x] Verify execution of Python cells.
 
+## Phase 5: Edit Command (New)
+
+- [x] **Edit Command (`edit.ts`)**
+  - [x] Define commander command `edit <file>` with options:
+    - [x] `-i, --instruction <text>` (Required: The change description).
+
+    - [x] `-o, --out <filename>` (Optional: Defaults to overwriting).
+
+  - [x] **Implementation:**
+    - [x] Read the target `.ipynb` file.
+
+    - [x] Construct a prompt with the notebook context + user instruction.
+
+    - [x] Use `Gemini` client (via `Config` or `ModelConfigService`) to generate
+          the new JSON.
+
+    - [x] Validate the output is valid JSON and a valid Notebook.
+
+    - [x] Write the result to disk.
+
+  - [x] **Registration:** Add `edit` to `index.ts`.
+
 ## Notes & Constraints
 
 - **Zero Python Dependencies:** Logic must be pure TypeScript.
+
 - **Strict Typing:** No `any` types in the converter.
+
 - **Spec:** Jupyter Notebook v4.5 compliance.
