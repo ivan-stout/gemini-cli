@@ -69,8 +69,10 @@ describe('notebookCommand', () => {
       );
       expect(mockUi.addItem).toHaveBeenCalledWith(
         expect.objectContaining({
-          content: [{ text: expect.stringContaining('Successfully exported') }],
+          text: expect.stringContaining('Successfully exported'),
+          type: 'user',
         }),
+        expect.any(Number),
       );
     });
 
@@ -84,10 +86,10 @@ describe('notebookCommand', () => {
 
       expect(mockUi.addItem).toHaveBeenCalledWith(
         expect.objectContaining({
-          content: [
-            { text: expect.stringContaining('No active conversation') },
-          ],
+          text: expect.stringContaining('No active conversation'),
+          type: 'user',
         }),
+        expect.any(Number),
       );
     });
   });
@@ -104,8 +106,10 @@ describe('notebookCommand', () => {
 
       expect(mockUi.addItem).toHaveBeenCalledWith(
         expect.objectContaining({
-          content: [{ text: expect.stringContaining('Please provide') }],
+          text: expect.stringContaining('Please provide'),
+          type: 'user',
         }),
+        expect.any(Number),
       );
     });
 
@@ -130,8 +134,10 @@ describe('notebookCommand', () => {
       expect(writeFile).toHaveBeenCalled();
       expect(mockUi.addItem).toHaveBeenCalledWith(
         expect.objectContaining({
-          content: [{ text: expect.stringContaining('Successfully edited') }],
+          text: expect.stringContaining('Successfully edited'),
+          type: 'user',
         }),
+        expect.any(Number),
       );
     });
   });

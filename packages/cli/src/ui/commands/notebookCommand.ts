@@ -29,10 +29,13 @@ const exportSubCommand: SlashCommand = {
     const conversation = recordingService.getConversation();
 
     if (!conversation) {
-      context.ui.addItem({
-        type: 'user', // System message
-        content: [{ text: 'No active conversation found to export.' }],
-      });
+      context.ui.addItem(
+        {
+          type: 'user', // System message
+          text: 'No active conversation found to export.',
+        },
+        Date.now(),
+      );
       return;
     }
 
@@ -50,19 +53,21 @@ const exportSubCommand: SlashCommand = {
 
     try {
       await writeFile(outputPath, JSON.stringify(notebook, null, 2), 'utf8');
-      context.ui.addItem({
-        type: 'user',
-        content: [{ text: `Successfully exported notebook to ${outputPath}` }],
-      });
+      context.ui.addItem(
+        {
+          type: 'user',
+          text: `Successfully exported notebook to ${outputPath}`,
+        },
+        Date.now(),
+      );
     } catch (e) {
-      context.ui.addItem({
-        type: 'user',
-        content: [
-          {
-            text: `Failed to export notebook: ${e instanceof Error ? e.message : String(e)}`,
-          },
-        ],
-      });
+      context.ui.addItem(
+        {
+          type: 'user',
+          text: `Failed to export notebook: ${e instanceof Error ? e.message : String(e)}`,
+        },
+        Date.now(),
+      );
     }
   },
 };
@@ -77,10 +82,13 @@ const editSubCommand: SlashCommand = {
 
     const trimmedArgs = args.trim();
     if (!trimmedArgs) {
-      context.ui.addItem({
-        type: 'user',
-        content: [{ text: 'Usage: /notebook edit <filename> <instruction>' }],
-      });
+      context.ui.addItem(
+        {
+          type: 'user',
+          text: 'Usage: /notebook edit <filename> <instruction>',
+        },
+        Date.now(),
+      );
       return;
     }
 
@@ -94,10 +102,13 @@ const editSubCommand: SlashCommand = {
     }
 
     if (!instruction) {
-      context.ui.addItem({
-        type: 'user',
-        content: [{ text: 'Please provide an instruction for editing.' }],
-      });
+      context.ui.addItem(
+        {
+          type: 'user',
+          text: 'Please provide an instruction for editing.',
+        },
+        Date.now(),
+      );
       return;
     }
 
@@ -107,20 +118,19 @@ const editSubCommand: SlashCommand = {
       notebookContent = await readFile(filePath, 'utf8');
       JSON.parse(notebookContent); // Validate JSON
     } catch (e) {
-      context.ui.addItem({
-        type: 'user',
-        content: [
-          {
-            text: `Error reading notebook file: ${e instanceof Error ? e.message : String(e)}`,
-          },
-        ],
-      });
+      context.ui.addItem(
+        {
+          type: 'user',
+          text: `Error reading notebook file: ${e instanceof Error ? e.message : String(e)}`,
+        },
+        Date.now(),
+      );
       return;
     }
 
     context.ui.setPendingItem({
       type: 'user',
-      content: [{ text: 'Editing notebook...' }],
+      text: 'Editing notebook...',
     });
 
     const prompt =
@@ -174,20 +184,22 @@ ${notebookContent}`;
 
       await writeFile(filePath, cleanedResponse, 'utf8');
       context.ui.setPendingItem(null);
-      context.ui.addItem({
-        type: 'user',
-        content: [{ text: `Successfully edited notebook: ${filePath}` }],
-      });
+      context.ui.addItem(
+        {
+          type: 'user',
+          text: `Successfully edited notebook: ${filePath}`,
+        },
+        Date.now(),
+      );
     } catch (error) {
       context.ui.setPendingItem(null);
-      context.ui.addItem({
-        type: 'user',
-        content: [
-          {
-            text: `Error editing notebook: ${error instanceof Error ? error.message : String(error)}`,
-          },
-        ],
-      });
+      context.ui.addItem(
+        {
+          type: 'user',
+          text: `Error editing notebook: ${error instanceof Error ? error.message : String(error)}`,
+        },
+        Date.now(),
+      );
     }
   },
 };
