@@ -118,9 +118,12 @@ describe('edit command', () => {
     mocks.sendMessageStream.mockReturnValue(mockStream());
 
     // Mock process.exit to catch it
+    // Mock process.exit to catch it
     const mockExit = vi
       .spyOn(process, 'exit')
-      .mockImplementation((() => {}) as unknown as (code?: number) => never);
+      .mockImplementation((() => {}) as unknown as (
+        code?: string | number | null,
+      ) => never);
 
     if (typeof editCommand.handler === 'function') {
       await editCommand.handler(argv as unknown as ArgumentsCamelCase);

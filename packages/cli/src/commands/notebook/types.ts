@@ -129,6 +129,7 @@ export interface LanguageInfo {
   file_extension?: string;
   mimetype?: string;
   name: string;
+  nbconvert_exporter?: string;
   pygments_lexer?: string;
   version?: string;
 }
